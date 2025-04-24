@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shared Notepad</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .description {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #7f8c8d;
+        }
+        #notepad {
+            width: 100%;
+            height: 400px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #clearBtn {
+            background-color: #e74c3c;
+        }
+        #clearBtn:hover {
+            background-color: #c0392b;
+        }
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .loading {
+            background-color: #f39c12;
+            color: white;
+        }
+        .success {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .error {
+            background-color: #e74c3c;
+            color: white;
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Shared Notepad</h1>
+        <p class="description">All changes are saved automatically and visible to everyone</p>
+        
+        <textarea id="notepad" placeholder="Start typing here..."></textarea>
+        
+        <div class="controls">
+            <button id="clearBtn">Clear All</button>
+            <button id="downloadBtn">Download Text</button>
+        </div>
+        
+        <div class="status" id="status">Loading content...</div>
+    </div>
+
+    <footer>
+        <p>This notepad uses your browser's local storage to save content.</p>
+    </footer>
+
+    <script>
+        // Get DOM elements
+        const notepad = document.getElementById('notepad');
+        const clearBtn = document.getElementById('clearBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const status = document.getElementById('status');
+        
+        // Check if content exists in local storage
+        function loadContent() {
+            status.className = 'status loading';
+            status.textContent = 'Loading content...';
+            
+            const savedContent = localStorage.getItem('sharedNotepadContent');
+            if (savedContent) {
+                notepad.value = savedContent;
+                status.className = 'status success';
+                status.textContent = 'Content loaded successfully!';
+            } else {
+                status.className = 'status';
+                status.textContent = 'Start typing to create new content.';
+            }
+            
+            setTimeout(() => {
+                status.className = 'status';
+                status.textContent = '';
+            }, 3000);
+        }
+        
+        // Save content to local storage
+        function saveContent() {
+            localStorage.setItem('sharedNotepadContent', notepad.value);
+            status.className = 'status success';
+            status.textContent = 'Changes saved!';
+            
+            setTimeout(() => {
+                status.className = 'status';
+                status.textContent = '';
+            }, 2000);
+        }
+        
+        // Clear all content
+        function clearContent() {
+            if (confirm('Are you sure you want to clear all content? This cannot be undone.')) {
+                notepad.value = '';
+                localStorage.removeItem('sharedNotepadContent');
+                status.className = 'status success';
+                status.textContent = 'Content cleared!';
+                
+                setTimeout(() => {
+                    status.className = 'status';
+                    status.textContent = '';
+                }, 2000);
+            }
+        }
+        
+        // Download content as text file
+        function downloadContent() {
+            const content = notepad.value;
+            if (!content.trim()) {
+                status.className = 'status error';
+                status.textContent = 'No content to download!';
+                
+                setTimeout(() => {
+                    status.className = 'status';
+                    status.textContent = '';
+                }, 2000);
+                return;
+            }
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'notepad-content.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            status.className = 'status success';
+            status.textContent = 'Download started!';
+            
+            setTimeout(() => {
+                status.className = 'status';
+                status.textContent = '';
+            }, 2000);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadContent);
+        
+        // Event listeners
+        notepad.addEventListener('input', () => {
+            saveContent();
+        });
+        
+        clearBtn.addEventListener('click', clearContent);
+        downloadBtn.addEventListener('click', downloadContent);
+        
+        // Auto-save every 30 seconds as backup
+        setInterval(saveContent, 30000);
+    </script>
+</body>
+</html>
