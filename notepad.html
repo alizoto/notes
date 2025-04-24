@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GitHub Gist Notepad</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #notepad { width: 100%; height: 400px; }
+        .status { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>GitHub Gist Notepad</h1>
+    <p>Content is saved to a GitHub Gist (you'll need a personal access token).</p>
+    
+    <textarea id="notepad"></textarea>
+    <p class="status" id="status">Loading...</p>
+    
+    <script>
+        const notepad = document.getElementById('notepad');
+        const status = document.getElementById('status');
+        
+        // Replace these with your Gist ID and personal access token
+        const GIST_ID = 'YOUR_GIST_ID';
+        const TOKEN = 'YOUR_GITHUB_TOKEN';
+        
+        // Load content from Gist
+        async function loadContent() {
+            try {
+                const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                    headers: { 'Authorization': `token ${TOKEN}` }
+                });
+                const data = await response.json();
+                notepad.value = data.files['notepad.txt'].content;
+                status.textContent = 'Content loaded from Gist.';
+            } catch (error) {
+                status.textContent = 'Error loading content: ' + error.message;
+            }
+            setTimeout(() => status.textContent = '', 2000);
+        }
+        
+        // Save content to Gist
+        async function saveContent() {
+            try {
+                await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `token ${TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        files: {
+                            'notepad.txt': {
+                                content: notepad.value
+                            }
+                        }
+                    })
+                });
+                status.textContent = 'Content saved to Gist.';
+            } catch (error) {
+                status.textContent = 'Error saving content: ' + error.message;
+            }
+            setTimeout(() => status.textContent = '', 2000);
+        }
+        
+        // Initialize
+        loadContent();
+        
+        // Save on changes with debounce
+        let saveTimeout;
+        notepad.addEventListener('input', () => {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveContent, 1000);
+            status.textContent = 'Saving changes...';
+        });
+    </script>
+</body>
+</html>
